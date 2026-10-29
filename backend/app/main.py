@@ -36,12 +36,20 @@ class Session:
     connected: bool = False
     stop: asyncio.Event = field(default_factory=asyncio.Event)
 
-def create_app(settings=None):
+def create_app(settings=None, local_runtime_factory=None):
     settings = settings or Settings.from_env()
     sessions = {}
+    local_runtime = None
+    # This GPU has 6 GB VRAM; admit one stream rather than overcommit live inference.
+    session_limit = 1 if settings.provider == 'local' else settings.max_sessions
 
     @asynccontextmanager
     async def lifespan(app):
+        nonlocal local_runtime
+        if settings.provider == 'local':
+            from .local_runtime import LocalRuntime
+            local_runtime = (local_runtime_factory or LocalRuntime)(settings)
+            await local_runtime.start()
         async def reap():
             while True:
                 await asyncio.sleep(2)
@@ -51,12 +59,16 @@ def create_app(settings=None):
                         entry.stop.set()
                         sessions.pop(sid, None)
         reaper = asyncio.create_task(reap())
-        yield
-        reaper.cancel()
-        for entry in list(sessions.values()):
-            entry.stop.set()
-        with suppress(asyncio.CancelledError):
-            await reaper
+        try:
+            yield
+        finally:
+            reaper.cancel()
+            for entry in list(sessions.values()):
+                entry.stop.set()
+            with suppress(asyncio.CancelledError):
+                await reaper
+            if local_runtime:
+                await local_runtime.close()
 
     app = FastAPI(title='日语实时字幕服务', lifespan=lifespan)
     app.state.sessions = sessions
@@ -67,12 +79,14 @@ def create_app(settings=None):
 
     @app.get('/health')
     def health():
-        return {'status': 'ok', 'provider': settings.provider, 'demo': settings.provider == 'mock'}
+        return {'status': 'ok', 'provider': settings.provider, 'demo': settings.provider == 'mock',
+                'ready': settings.provider != 'local' or bool(local_runtime and local_runtime.ready),
+                'max_sessions': session_limit}
 
     @app.post('/v1/sessions')
     async def create(body: SessionRequest, request: Request, authorization: str = Header(default='')):
         authorize(authorization)
-        if len(sessions) >= settings.max_sessions:
+        if len(sessions) >= session_limit:
             raise HTTPException(429, 'session_limit')
         sid, token = secrets.token_urlsafe(18), secrets.token_urlsafe(32)
         sessions[sid] = Session(token)
@@ -126,9 +140,14 @@ def create_app(settings=None):
             if (first.get('type') != 'stream.start' or first.get('version') != 1
                     or type(epoch) is not int or epoch < 1):
                 raise ProtocolError('invalid_start')
-            translator = Translator(settings)
-            scheduler = TranslationScheduler(translator.translate, publish)
-            recognizer = MockRecognizer(emit) if settings.provider == 'mock' else AzureRecognizer(settings, emit)
+            translator = Translator(settings) if settings.provider != 'local' else None
+            translate = local_runtime.translate if settings.provider == 'local' else translator.translate
+            scheduler = TranslationScheduler(translate, publish)
+            if settings.provider == 'local':
+                from .streaming import LocalRecognizer
+                recognizer = LocalRecognizer(local_runtime, emit)
+            else:
+                recognizer = MockRecognizer(emit) if settings.provider == 'mock' else AzureRecognizer(settings, emit)
             await asyncio.wait_for(recognizer.start(), 20)
             await publish({'type': 'stream.ready', 'demo': settings.provider == 'mock'})
             tracker = FrameTracker()

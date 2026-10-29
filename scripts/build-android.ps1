@@ -38,8 +38,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Android build or checks failed' }
     $output = Join-Path $projectRoot 'artifacts'
     New-Item -ItemType Directory -Path $output -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $projectRoot 'android\app\build\outputs\apk\debug\app-debug.apk') -Destination (Join-Path $output '日语实时字幕-0.1.0-demo.apk') -Force
-    Get-FileHash -LiteralPath (Join-Path $output '日语实时字幕-0.1.0-demo.apk') -Algorithm SHA256
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'android\app\build\outputs\apk\debug\app-debug.apk') -Destination (Join-Path $output '日语实时字幕-0.2.0-local.apk') -Force
+    Get-FileHash -LiteralPath (Join-Path $output '日语实时字幕-0.2.0-local.apk') -Algorithm SHA256
 } finally {
     $env:JAVA_HOME = $oldJava
     $env:GRADLE_USER_HOME = $oldGradle

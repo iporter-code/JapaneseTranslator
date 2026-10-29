@@ -1,0 +1,7 @@
+# Install into evaluation/.venv-models, which holds the already tested CUDA wheels.
+-r requirements.txt
+faster-whisper==1.2.1
+ctranslate2==4.8.4
+av==16.1.0
+numpy==2.5.4
+onnxruntime==1.31.1

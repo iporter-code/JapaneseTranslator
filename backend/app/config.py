@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 @dataclass(frozen=True)
@@ -13,6 +14,11 @@ class Settings:
     translator_key: str = ''
     translator_region: str = ''
     translator_endpoint: str = 'https://api.cognitive.microsofttranslator.com'
+    local_asr_path: str = ''
+    local_llama_path: str = ''
+    local_translation_path: str = ''
+    local_device: str = 'cuda'
+    local_llama_port: int = 8788
 
     @classmethod
     def from_env(cls):
@@ -21,13 +27,18 @@ class Settings:
         if len(token) < 24 or token == 'replace-with-a-long-random-token':
             raise ValueError('Set APP_ACCESS_TOKEN to a private random value of at least 24 characters')
         provider = os.getenv('PROVIDER', 'mock')
-        if provider not in ('mock', 'azure'):
-            raise ValueError('PROVIDER must be mock or azure')
+        if provider not in ('mock', 'azure', 'local'):
+            raise ValueError('PROVIDER must be mock, azure or local')
+        root = Path(__file__).resolve().parents[2]
         settings = cls(token, provider, int(os.getenv('MAX_SESSION_SECONDS', '3600')),
                        int(os.getenv('MAX_SESSIONS', '2')),
                        os.getenv('AZURE_SPEECH_KEY', ''), os.getenv('AZURE_SPEECH_REGION', ''),
                        os.getenv('AZURE_TRANSLATOR_KEY', ''), os.getenv('AZURE_TRANSLATOR_REGION', ''),
-                       os.getenv('AZURE_TRANSLATOR_ENDPOINT', 'https://api.cognitive.microsofttranslator.com'))
+                       os.getenv('AZURE_TRANSLATOR_ENDPOINT', 'https://api.cognitive.microsofttranslator.com'),
+                       os.getenv('LOCAL_ASR_PATH') or str(root / 'evaluation/models/whisper-turbo'),
+                       os.getenv('LOCAL_LLAMA_PATH') or str(root / '.tools/llama-b11979/llama-server.exe'),
+                       os.getenv('LOCAL_TRANSLATION_PATH') or str(root / 'evaluation/models/hy-mt2/Hy-MT2-1.8B-Q4_K_M.gguf'),
+                       os.getenv('LOCAL_DEVICE', 'cuda'), int(os.getenv('LOCAL_LLAMA_PORT', '8788')))
         if settings.max_session_seconds <= 0 or settings.max_sessions <= 0:
             raise ValueError('Session limits must be positive')
         if provider == 'azure' and not all((settings.speech_key, settings.speech_region,
@@ -35,4 +46,6 @@ class Settings:
             raise ValueError('Azure credentials/regions are incomplete')
         if not settings.translator_endpoint.startswith('https://'):
             raise ValueError('Translator requires HTTPS')
+        if settings.local_device not in ('cuda', 'cpu') or not 1024 <= settings.local_llama_port <= 65535:
+            raise ValueError('Invalid local device or port')
         return settings

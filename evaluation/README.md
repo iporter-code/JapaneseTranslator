@@ -47,3 +47,14 @@ CPU 对照：
 - `results/translation_startup-gpu.json`：运行配置与真实 CUDA0 设备信息。
 
 模型测试服务仅监听 `127.0.0.1:8788`，脚本结束后自动关闭，并移除自己创建的临时 ASCII 盘符映射。运行前确保该端口空闲。全部推理在电脑本地执行，没有付费 API 调用。
+
+## 0.2 真实流式链路
+
+`backend/app/local_runtime.py` 和 `streaming.py` 已把模型接入应用协议。启动、USB 手机联调与配置见 [本地模型联调](../docs/本地模型联调.md)。
+
+```powershell
+# 需要本地模型环境和公开 WAV 已准备好，8765/8788 端口空闲。
+.\evaluation\.venv-models\Scripts\python.exe evaluation/run_streaming_check.py --repeat 2
+```
+
+该检查自行启动常驻模型服务，以真实播放速度重复上传 10 段公开音频，再创建新 epoch 上传 6 秒静音，最后关闭服务并检查端口释放。`results/streaming-local-stable.json` 是采用两次识别共同前缀、400 ms 前导音频的当前实现报告；`streaming-local.json` 和 `streaming-local-stable-preroll200.json` 保留调试前后对照。字幕事件的延迟从 `end_audio_ms` 计起，包含的音频已带 VAD 静音，不等于实际说话结束或手机延迟。报告中的文本用于复核，不自动判为翻译正确。

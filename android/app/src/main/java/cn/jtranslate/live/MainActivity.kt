@@ -61,8 +61,9 @@ class MainActivity : ComponentActivity() {
                         Text("日语实时字幕", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                         Text("日语 → 简体中文", color = MaterialTheme.colorScheme.primary)
                         Card { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(if (options.localDemo) "本机演示" else "后端联调", fontWeight = FontWeight.Bold)
-                            Text("当前版本用于验证内部音频、悬浮字幕与传输。演示字幕是固定示例，不代表影片真实对白。")
+                            Text(if (options.localDemo) "本机演示" else "连接翻译服务", fontWeight = FontWeight.Bold)
+                            Text(if (options.localDemo) "演示字幕是固定示例，不代表影片真实对白。"
+                                else "连接电脑上的本地模型服务，可识别日语对白并翻译为中文。电脑需保持运行；连接模拟后端时仍显示演示字幕。")
                             Text("开始后请切换到夸克或播放器。不同 App 的采集与覆盖限制以真机结果为准。")
                         } }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -71,7 +72,7 @@ class MainActivity : ComponentActivity() {
                             }, label = { Text("本机演示") })
                             FilterChip(selected = !options.localDemo, enabled = !live.active, onClick = {
                                 lifecycleScope.launch { settings.save(options.copy(localDemo = false)) }
-                            }, label = { Text("后端联调") })
+                            }, label = { Text("连接翻译服务") })
                         }
                         if (!options.localDemo) {
                             OutlinedTextField(server, { server = it }, label = { Text("后端地址") }, singleLine = true,
