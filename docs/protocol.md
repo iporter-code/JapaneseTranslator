@@ -1,6 +1,6 @@
 # 已实现的字幕协议 v1
 
-基于完整方案第 10 节。`POST /v1/sessions` 使用后端配置的应用令牌，返回随机会话 ID、短期流令牌和模式标签；120 秒内连接。`DELETE /v1/sessions/{id}` 可重复调用。
+`POST /v1/sessions` 使用后端配置的应用令牌，返回随机会话 ID、短期流令牌和模式标签；120 秒内连接。`DELETE /v1/sessions/{id}` 可重复调用。
 
 WebSocket `/v1/sessions/{id}/stream` 在 Authorization 请求头使用流令牌。先发送 `{"type":"stream.start","version":1,"epoch":1}`，等待 `stream.ready`。每个连接只使用一个 epoch。
 

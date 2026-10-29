@@ -19,3 +19,16 @@ evaluation/private/
 evaluation/models/
 evaluation/samples/
 evaluation/.venv-models/
+
+# Private plans stay local and must never be uploaded.
+*方案*
+*计划*
+*规划*
+*策划*
+*开发步骤*
+*开发进度*
+*[Pp][Ll][Aa][Nn]*
+*[Pp][Rr][Oo][Pp][Oo][Ss][Aa][Ll]*
+*[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*
+private/
+私人文档/
