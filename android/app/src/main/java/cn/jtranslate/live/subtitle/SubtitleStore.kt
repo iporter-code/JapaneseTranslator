@@ -8,6 +8,7 @@ data class Subtitle(val segmentId: String, val revision: Int, val translationRev
 
 class SubtitleStore(private val epoch: Int) {
     private val lines = linkedMapOf<String, Subtitle>()
+    private var displayed: Subtitle? = null
     fun accept(event: JSONObject): Subtitle? {
         if (event.optInt("epoch") != epoch) return null
         val id = event.optString("segment_id")
@@ -30,6 +31,10 @@ class SubtitleStore(private val epoch: Int) {
             event.optLong("start_audio_ms"))
         lines[id] = result
         if (lines.size > 32) lines.remove(lines.keys.first())
-        return lines.values.maxByOrNull { it.startMs }
+        // Keep the last complete source/translation pair while the next revision
+        // or utterance is being recognized. Never replace it with an empty ASR event.
+        if (translated && result.text.isNotBlank() && (displayed == null || result.startMs >= displayed!!.startMs))
+            displayed = result
+        return displayed
     }
 }

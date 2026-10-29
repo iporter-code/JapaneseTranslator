@@ -15,7 +15,7 @@ else { throw 'Connect exactly one authorized phone, or pass -Serial; enable USB 
 & $Adb -s $Serial reverse "tcp:$Port" "tcp:$Port"
 if ($LASTEXITCODE -ne 0) { throw 'Connect and authorize a phone with USB debugging enabled first' }
 if ($Install) {
-    $apk = Join-Path $projectRoot 'artifacts\日语实时字幕-0.2.0-local.apk'
+    $apk = Join-Path $projectRoot 'artifacts\日语实时字幕-0.3.0.apk'
     if (-not (Test-Path -LiteralPath $apk)) { throw 'Build the current APK first' }
     & $Adb -s $Serial install -r $apk
     if ($LASTEXITCODE -ne 0) { throw 'APK installation failed; review the phone installation prompt' }

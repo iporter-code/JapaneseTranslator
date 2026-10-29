@@ -30,11 +30,34 @@ class CoreTest {
         store.accept(event(1, "后一句", true, start = 2000, segment = "b"))
         assertEquals("后一句", store.accept(event(1, "前一句", true, start = 0))!!.text)
     }
-    @Test fun newerSourceClearsOldTranslation() {
+    @Test fun newerSourceKeepsDisplayedTranslationUntilReplacementArrives() {
         val store = SubtitleStore(1)
         store.accept(event(1, "旧译文", false))
         val revised = event(2, "", false).put("type", "asr.partial")
-        assertEquals("", store.accept(revised)!!.text)
+        assertEquals("旧译文", store.accept(revised)!!.text)
+        assertEquals("新译文", store.accept(event(2, "新译文", true))!!.text)
+    }
+    @Test fun firstAsrIsBlankAndNextUtteranceDoesNotErasePreviousCaption() {
+        val store = SubtitleStore(1)
+        assertNull(store.accept(event(1, "", false).put("type", "asr.partial")))
+        store.accept(event(1, "第一句", true))
+        assertEquals("第一句", store.accept(event(1, "", false, start = 2000, segment = "b").put("type", "asr.partial"))!!.text)
+        assertEquals("第二句", store.accept(event(1, "第二句", true, start = 2000, segment = "b"))!!.text)
+    }
+    @Test fun compressedAudioIsLosslessAndRawFallbackKeepsHeader() {
+        val encoder = cn.jtranslate.live.network.AudioPacketEncoder()
+        try {
+            val pcm = ByteArray(3200) { (it % 4).toByte() }
+            val packet = encoder.encode(pcm, 12, 19200, true)
+            assertTrue(packet.size < pcm.size)
+            assertEquals(1, packet[5].toInt())
+            val decoder = java.util.zip.Inflater()
+            decoder.setInput(packet.copyOfRange(24, packet.size))
+            val restored = ByteArray(3200)
+            assertEquals(3200, decoder.inflate(restored)); assertTrue(decoder.finished())
+            decoder.end(); assertArrayEquals(pcm, restored)
+            assertArrayEquals(pcm, encoder.encode(pcm, 0, 0, false).copyOfRange(24, 3224))
+        } finally { encoder.close() }
     }
     @Test fun directPcmPreservesSamplesAndFrameBoundaries() {
         val frames = mutableListOf<ByteArray>()

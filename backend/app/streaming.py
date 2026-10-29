@@ -2,15 +2,17 @@
 import asyncio
 from collections import OrderedDict
 from dataclasses import dataclass
+import time
 
 from .providers import ProviderError, Recognition
+from .interjections import interjection_translation
 
 RATE = 16000
 BLOCK = 512  # Silero v6 expects 32 ms at 16 kHz.
 PRE_ROLL_SECONDS = .4
-END_SILENCE_SECONDS = .6
-MIN_VOICE_SECONDS = .24
-PARTIAL_INTERVAL_SECONDS = 1.2
+END_SILENCE_SECONDS = .32
+MIN_VOICE_SECONDS = .096
+PARTIAL_INTERVAL_SECONDS = .8
 MAX_UTTERANCE_SECONDS = 8.0
 
 
@@ -45,7 +47,7 @@ class OnlineSegmenter:
             block = bytes(self.remainder[:BLOCK * 2])
             del self.remainder[:BLOCK * 2]
             probability = self.vad(block)
-            voiced = probability >= (0.35 if self.active else 0.5)
+            voiced = probability >= (0.25 if self.active else 0.4)
             if not self.active:
                 if not voiced:
                     self.pre.extend(block)
@@ -117,7 +119,9 @@ class LocalRecognizer:
                 await self.wake.wait()
                 while self.pending:
                     key, job = self.pending.popitem(last=False)
-                    text = await self.runtime.transcribe(job.pcm)
+                    started = time.perf_counter()
+                    text = await self.runtime.transcribe(job.pcm, final=job.final)
+                    processing_ms = round((time.perf_counter() - started) * 1000)
                     if self.closed:
                         return
                     if self.latest.get(key) != job.revision:
@@ -132,9 +136,10 @@ class LocalRecognizer:
                             if before != after:
                                 break
                             stable += 1
-                        text = text[:stable].strip() if stable >= 4 else ''
+                        confirmed_short = stable == len(text) and interjection_translation(text) is not None
+                        text = text[:stable].strip() if stable >= 4 or confirmed_short else ''
                     if text:
-                        self.emit(Recognition(key, text, job.start // 16, job.end // 16, job.final))
+                        self.emit(Recognition(key, text, job.start // 16, job.end // 16, job.final, processing_ms))
                     if job.final:
                         self.latest.pop(key, None)
                         self.previous_text.pop(key, None)

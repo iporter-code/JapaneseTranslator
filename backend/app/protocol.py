@@ -1,6 +1,7 @@
 """JTR1: network-order header followed by signed little-endian mono PCM."""
 from dataclasses import dataclass
 import struct
+import zlib
 
 HEADER = struct.Struct('>4sBBHIQI')
 SAMPLE_RATE = 16000
@@ -21,15 +22,28 @@ class AudioFrame:
         if len(raw) < HEADER.size:
             raise ProtocolError('short_header')
         magic, version, flags, size, seq, first, count = HEADER.unpack_from(raw)
-        if (magic, version, flags, size) != (b'JTR1', 1, 0, 24):
+        if (magic, version, size) != (b'JTR1', 1, 24) or flags not in (0, 1):
             raise ProtocolError('unsupported_header')
-        if not 0 < count <= MAX_SAMPLES or len(raw) != 24 + count * 2:
+        if not 0 < count <= MAX_SAMPLES or len(raw) > 24 + MAX_SAMPLES * 2 + 64:
             raise ProtocolError('invalid_payload_size')
-        return cls(seq, first, count, raw[24:])
+        pcm = raw[24:]
+        if flags == 1:
+            try:
+                decoder = zlib.decompressobj()
+                pcm = decoder.decompress(pcm, count * 2 + 1)
+                if not decoder.eof or decoder.unconsumed_tail or decoder.unused_data:
+                    raise ProtocolError('invalid_compressed_audio')
+            except zlib.error:
+                raise ProtocolError('invalid_compressed_audio') from None
+        if len(pcm) != count * 2:
+            raise ProtocolError('invalid_payload_size')
+        return cls(seq, first, count, pcm)
 
-    def encode(self):
-        return HEADER.pack(b'JTR1', 1, 0, 24, self.sequence,
-                           self.first_sample_index, self.sample_count) + self.pcm
+    def encode(self, compress=False):
+        payload = zlib.compress(self.pcm, 1) if compress else self.pcm
+        flag = int(compress and len(payload) < len(self.pcm))
+        return HEADER.pack(b'JTR1', 1, flag, 24, self.sequence,
+                           self.first_sample_index, self.sample_count) + (payload if flag else self.pcm)
 
 class FrameTracker:
     def __init__(self):

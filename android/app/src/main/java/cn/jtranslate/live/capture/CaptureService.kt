@@ -6,6 +6,7 @@ import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.media.projection.*
 import android.os.*
+import androidx.core.content.edit
 import cn.jtranslate.live.*
 import cn.jtranslate.live.network.*
 import cn.jtranslate.live.overlay.OverlayController
@@ -38,6 +39,8 @@ class CaptureService : Service() {
     private var stopping = false
     private var initialized = false
     private var epoch = 0
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var wakeJob: Job? = null
     override fun onBind(intent: Intent?) = null
 
     override fun onCreate() {
@@ -56,7 +59,9 @@ class CaptureService : Service() {
                 val stop = PendingIntent.getService(this, 1, Intent(this, CaptureService::class.java).setAction(STOP), PendingIntent.FLAG_IMMUTABLE)
                 val notification = Notification.Builder(this, "capture").setSmallIcon(cn.jtranslate.live.R.drawable.ic_translate)
                     .setContentTitle("日语字幕运行中").setContentText("正在采集内部播放音频；可随时停止")
-                    .setContentIntent(pending).setOngoing(true).addAction(Notification.Action.Builder(null, "停止", stop).build()).build()
+                    .setContentIntent(pending).setOngoing(true).setCategory(Notification.CATEGORY_SERVICE)
+                    .setVisibility(Notification.VISIBILITY_PRIVATE)
+                    .addAction(Notification.Action.Builder(null, "停止", stop).build()).build()
                 startForeground(10, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
                 scope.launch {
                     try {
@@ -70,11 +75,12 @@ class CaptureService : Service() {
                                 if (!stopping) finish("系统已结束捕获，请重新授权开始")
                             }
                         }, Handler(Looper.getMainLooper()))
-                        overlay = OverlayController(this@CaptureService,
-                            { command(this@CaptureService, TOGGLE) }, { command(this@CaptureService, STOP) },
+                        overlay = OverlayController(this@CaptureService, { command(this@CaptureService, STOP) },
                             { landscape, x, y -> scope.launch { settings.position(landscape, x, y) } })
                         overlay!!.style(options); overlay!!.show()
                         AppState.live.value = LiveState(active = true, status = "启动音频采集", demo = options.localDemo)
+                        getSharedPreferences("runtime", MODE_PRIVATE).edit { putBoolean("running", true) }
+                        holdCpu()
                         scope.launch { settings.options.collect { options = it; overlay?.style(it) } }
                         scope.launch { AppState.live.collect { overlay?.render(it) } }
                         launchSession()
@@ -86,9 +92,12 @@ class CaptureService : Service() {
                 if (projection == null || stopping) return@withLock
                 sessionJob?.cancelAndJoin()
                 if (intent.action == TOGGLE && !AppState.live.value.paused) {
-                    AppState.update { it.copy(paused = true, rms = 0f, status = "已暂停", source = "", translated = "") }
+                    releaseCpu()
+                    AppState.update { it.copy(paused = true, rms = 0f, status = "已暂停") }
                 } else {
-                    AppState.update { it.copy(paused = false, source = "", translated = "", error = "") }
+                    holdCpu()
+                    AppState.update { it.copy(paused = false, source = if (intent.action == CLEAR) "" else it.source,
+                        translated = if (intent.action == CLEAR) "" else it.translated, error = "") }
                     launchSession()
                 }
             } }
@@ -100,7 +109,6 @@ class CaptureService : Service() {
     private fun launchSession() {
         sessionJob = scope.launch {
             var attempt = 0
-            var failedAt = 0L
             while (isActive && !stopping) {
                 val current = ++epoch
                 var remote: RemoteSession? = null
@@ -114,11 +122,13 @@ class CaptureService : Service() {
                 var voicedFrames = 0
                 var lastVoice = SystemClock.elapsedRealtime()
                 try {
-                    AppState.update { it.copy(epoch = current, status = if (options.localDemo) "本机演示 · 等待音频" else "连接后端…", source = "", translated = "", error = "") }
+                    AppState.update { it.copy(epoch = current, status = if (options.localDemo) "本机演示 · 等待音频" else "连接后端…", error = "") }
                     if (!options.localDemo) {
                         val connection = RemoteSession(options.server, settings.token(), current, { event ->
                             if (AppState.live.value.epoch == current && !stopping) {
-                                if (event.optString("type") == "session.error") {
+                                if (event.optString("type") == "pong") {
+                                    AppState.update { it.copy(networkRttMs = event.optLong("client_rtt_ms")) }
+                                } else if (event.optString("type") == "session.error") {
                                     AppState.update { it.copy(error = "服务提示：${event.optString("code")}") }
                                 } else subtitles.accept(event)?.let { line ->
                                     AppState.update { it.copy(source = line.source, translated = line.text,
@@ -128,6 +138,7 @@ class CaptureService : Service() {
                         }, { failures.trySend(it) })
                         remote = connection
                         connection.open()
+                        connection.heartbeat()
                         AppState.update { it.copy(demo = connection.demo, status = if (connection.demo) "后端演示 · 固定测试字幕" else "正在翻译") }
                         heartbeat = launch { while (isActive) { delay(10000); connection.heartbeat() } }
                     } else AppState.update { it.copy(demo = true) }
@@ -139,9 +150,7 @@ class CaptureService : Service() {
                         if (rms > .003f) lastVoice = now
                         AppState.update { state ->
                             if (state.epoch != current) state else state.copy(rms = rms,
-                                status = if (now - lastVoice > 5000) "暂未检测到可采集声音" else if (state.demo) "演示模式 · 不识别对白" else "正在翻译",
-                                source = if (state.lastSubtitleAt > 0 && now - state.lastSubtitleAt > 8000) "" else state.source,
-                                translated = if (state.lastSubtitleAt > 0 && now - state.lastSubtitleAt > 8000) "" else state.translated)
+                                status = if (now - lastVoice > 5000) "暂未检测到可采集声音" else if (state.demo) "演示模式 · 不识别对白" else "正在翻译")
                         }
                     }, { failures.trySend(SessionFailure(it, false)) })
                     while (isActive) {
@@ -159,15 +168,13 @@ class CaptureService : Service() {
                         }
                         sequence++; firstSample += pcm.size / 2
                         AppState.update { it.copy(frames = it.frames + 1) }
-                        if (sequence >= 100) { attempt = 0; failedAt = 0 }
+                        if (sequence >= 100) attempt = 0
                     }
                 } catch (cancel: CancellationException) {
                     throw cancel
                 } catch (error: Exception) {
                     val retryable = error is SessionFailure && error.retryable && !options.localDemo
-                    val now = SystemClock.elapsedRealtime()
-                    if (failedAt == 0L) failedAt = now
-                    if (!retryable || now - failedAt > 30000) {
+                    if (!retryable) {
                         finish((error as? SessionFailure)?.reason ?: "采集或连接失败，请检查权限后重新开始")
                         break
                     }
@@ -194,10 +201,32 @@ class CaptureService : Service() {
         AppState.update { it.copy(active = false, paused = false, epoch = epoch, rms = 0f,
             status = message.ifEmpty { "已停止" }, error = message, source = "", translated = "") }
         sessionJob?.cancel()
+        releaseCpu()
+        getSharedPreferences("runtime", MODE_PRIVATE).edit {
+            putBoolean("running", false); putString("last_stop", message)
+        }
         overlay?.close()
         runCatching { projection?.stop() }; projection = null
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    private fun holdCpu() {
+        if (wakeJob?.isActive == true) return
+        val lock = getSystemService(PowerManager::class.java).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "jtranslate:audio")
+        lock.setReferenceCounted(false)
+        wakeLock = lock
+        wakeJob = scope.launch {
+            while (isActive && !stopping) {
+                lock.acquire(10 * 60 * 1000L)
+                delay(5 * 60 * 1000L)
+            }
+        }
+    }
+
+    private fun releaseCpu() {
+        wakeJob?.cancel(); wakeJob = null
+        wakeLock?.let { if (it.isHeld) it.release() }; wakeLock = null
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

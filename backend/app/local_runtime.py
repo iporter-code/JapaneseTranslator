@@ -11,12 +11,13 @@ import time
 import httpx
 
 from .providers import ProviderError
+from .interjections import interjection_translation
 
 FAITHFUL_PROMPT = (
     '请将下面的日语对白忠实翻译为自然的简体中文。'
     '准确保留动作执行者、接受者、借入和借出方向、否定与时间关系；'
     '不要添加原文没有的对象。保留原文的粗口和性相关用语，'
-    '不主动打码或委婉化。只输出译文，不要解释。\n\n'
+    '不主动打码或委婉化。保留嗯、啊、诶等语气词和感叹，不要省略。只输出译文，不要解释。\n\n'
 )
 
 
@@ -115,14 +116,15 @@ class LocalRuntime:
             return float(output.reshape(-1)[0])
         return probability
 
-    async def transcribe(self, pcm):
+    async def transcribe(self, pcm, final=True):
         import numpy as np
         def infer():
             audio = np.frombuffer(pcm, dtype='<i2').astype('float32') / 32768.0
-            segments, _ = self.model.transcribe(audio, language='ja', task='transcribe', beam_size=5,
+            segments, _ = self.model.transcribe(audio, language='ja', task='transcribe', beam_size=5 if final else 1,
                 condition_on_previous_text=False, vad_filter=False, temperature=0)
-            return ''.join(segment.text for segment in segments
-                           if segment.no_speech_prob < .6 and segment.avg_logprob > -1.0).strip()
+            # faster-whisper already applies its combined no-speech / log-probability
+            # rule. A second standalone no-speech cutoff dropped confident short replies.
+            return ''.join(segment.text for segment in segments).strip()
         async with self.asr_gate:
             task = asyncio.create_task(asyncio.to_thread(infer))
             try:
@@ -136,6 +138,9 @@ class LocalRuntime:
                     raise
 
     async def translate(self, text):
+        short = interjection_translation(text)
+        if short is not None:
+            return short
         try:
             async with self.translation_gate:
                 response = await self.client.post('/v1/chat/completions', json={

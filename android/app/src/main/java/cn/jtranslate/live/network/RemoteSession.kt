@@ -8,9 +8,8 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import okio.ByteString.Companion.toByteString
 import org.json.JSONObject
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.concurrent.TimeUnit
+import android.os.SystemClock
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -46,6 +45,9 @@ class RemoteSession(private val base: String, private val accessToken: String, p
     private val ready = CompletableDeferred<Unit>()
     @Volatile private var closed = false
     var demo = true; private set
+    private val encoder = AudioPacketEncoder()
+    private var compressAudio = false
+    @Volatile private var pingAt = 0L
 
     suspend fun open() {
         validateServer(base)
@@ -56,11 +58,14 @@ class RemoteSession(private val base: String, private val accessToken: String, p
         val info = response.use {
             if (!it.isSuccessful) throw SessionFailure(when (it.code) {
                 401 -> "后端令牌无效"; 429 -> "后端会话或额度已满"; else -> "后端暂不可用（${it.code}）"
-            }, it.code >= 500)
+            }, it.code >= 500 || it.code == 429)
             JSONObject(it.body?.string() ?: throw SessionFailure("后端响应为空"))
         }
         sid = info.getString("session_id")
         demo = info.optBoolean("demo", false)
+        compressAudio = info.optJSONArray("audio_compression")?.let { array ->
+            (0 until array.length()).any { array.optString(it) == "zlib" }
+        } ?: false
         // Derive URL from configured host; never trust an arbitrary server-supplied host.
         val wsUrl = "${base.trimEnd('/')}/v1/sessions/$sid/stream"
         socket = client.newWebSocket(Request.Builder().url(wsUrl)
@@ -75,8 +80,10 @@ class RemoteSession(private val base: String, private val accessToken: String, p
                     if (event.optInt("epoch") != epoch) return
                     when (event.optString("type")) {
                         "stream.ready" -> ready.complete(Unit)
+                        "pong" -> if (pingAt > 0) onEvent(event.put("client_rtt_ms", SystemClock.elapsedRealtime() - pingAt))
                         "session.error" -> if (event.optBoolean("fatal")) {
-                            val error = SessionFailure("服务错误：${event.optString("code")}", false)
+                            val code = event.optString("code")
+                            val error = SessionFailure("服务错误：$code", code in listOf("provider_unavailable", "provider_overloaded"))
                             ready.completeExceptionally(error)
                             failed(error)
                         } else onEvent(event)
@@ -103,14 +110,12 @@ class RemoteSession(private val base: String, private val accessToken: String, p
 
     fun send(pcm: ByteArray, sequence: Int, first: Long) {
         if (closed) throw SessionFailure("连接已关闭")
-        val data = ByteBuffer.allocate(24 + pcm.size).order(ByteOrder.BIG_ENDIAN)
-            .put("JTR1".toByteArray()).put(1.toByte()).put(0.toByte()).putShort(24.toShort())
-            .putInt(sequence).putLong(first).putInt(pcm.size / 2).put(pcm).array()
+        val data = encoder.encode(pcm, sequence, first, compressAudio)
         if ((socket?.queueSize() ?: 0) > 64000 || socket?.send(data.toByteString()) != true)
             throw SessionFailure("上传积压，正在重新跟随")
     }
 
-    fun heartbeat() { socket?.send("{\"type\":\"ping\"}") }
+    fun heartbeat() { pingAt = SystemClock.elapsedRealtime(); socket?.send("{\"type\":\"ping\"}") }
 
     suspend fun close() {
         if (closed) return
@@ -126,6 +131,7 @@ class RemoteSession(private val base: String, private val accessToken: String, p
             }
         }
         socket?.cancel()
+        encoder.close()
         client.connectionPool.evictAll()
         client.dispatcher.executorService.shutdown()
     }

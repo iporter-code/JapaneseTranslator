@@ -6,6 +6,10 @@ WebSocket `/v1/sessions/{id}/stream` 在 Authorization 请求头使用流令牌�
 
 二进制音频头为 `>4sBBHIQI`，24 字节：`JTR1`、版本 1、标志 0、头长 24、32 位序号、64 位首采样位置、32 位采样数。元数据大端，负载为小端 PCM16、单声道、16 kHz。标准帧 100 ms，采样数 1600，PCM 3200 字节。序号和首采样位置从 0 开始连续递增。单帧最多 3200 采样。
 
+0.3 扩展：创建会话响应 `audio_compression: ["zlib"]` 表示支持逐帧无损压缩；客户端只有协商成功后才可使用标志 1，负载为 zlib 压缩的同一 PCM 帧，采样数仍是解压后的采样数。压缩无收益时仍发送标志 0。后端限制输入长度、解压输出长度及流结束，不接受截断、尾随或超长内容，防止压缩包无限展开。旧客户端标志 0 的行为不变。
+
+字幕事件追加可选诊断字段 `recognition_ms` 和 `server_input_lag_ms`，用于区分原生识别耗时与音频到达服务端的积压；旧客户端可忽略。它们不等于用户听到一句话到手机绘制字幕的总延迟。
+
 支持 `asr.partial`、`asr.final`、`translation.partial`、`translation.final`、`session.error`、`pong`。字幕绑定 epoch、segment_id、source_revision。旧原文版本的译文不能覆盖新版本。
 
 控制消息：`ping` 保持应用层活跃，`stream.stop` 结束上传。每 30 秒必须有音频或应用层消息。暂停、继续、清空和断线恢复通过关闭原会话并创建新会话完成，不在同一连接中复用识别状态。尚未实现句子合并/拆分的 `segment.replace`，当前供应商适配器不产生该事件。

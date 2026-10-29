@@ -13,6 +13,7 @@ class Recognition:
     start_ms: int
     end_ms: int
     final: bool
+    processing_ms: int = 0
 
 class ProviderError(RuntimeError):
     def __init__(self, code='provider_unavailable'):
@@ -150,7 +151,7 @@ class TranslationScheduler:
         async def work():
             try:
                 if not event['asr_final']:
-                    await asyncio.sleep(.7)
+                    await asyncio.sleep(.12)
                 async with self.gate:
                     translated = await self.translate(event['source_text'])
                 if self.closed or self.revisions.get(key) != event['source_revision']:

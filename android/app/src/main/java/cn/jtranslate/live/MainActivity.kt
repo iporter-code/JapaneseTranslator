@@ -3,6 +3,7 @@ package cn.jtranslate.live
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.ComponentName
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -47,6 +48,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settings = AppSettings(this)
+        if (!AppState.live.value.active) {
+            val runtime = getSharedPreferences("runtime", MODE_PRIVATE)
+            if (runtime.getBoolean("running", false)) AppState.update { it.copy(error =
+                "上次字幕未正常结束，可能被系统清理。请检查下方后台运行设置，再重新授权开始。") }
+            else runtime.getString("last_stop", "")?.takeIf { it.isNotBlank() }?.let { reason ->
+                AppState.update { it.copy(error = "上次停止原因：$reason") }
+            }
+        }
         setContent {
             val options by settings.options.collectAsState(initial = Options())
             val live by AppState.live.collectAsState()
@@ -91,9 +100,14 @@ class MainActivity : ComponentActivity() {
                                 }
                             }) { Text("保存后端配置") }
                         }
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("显示原文（日语）")
+                            Switch(options.bilingual, { lifecycleScope.launch { settings.save(options.copy(bilingual = it)) } })
+                        }
                         Text("状态：${live.status}", fontWeight = FontWeight.Bold)
                         LinearProgressIndicator(progress = { (live.rms * 8).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                         Text("内部音量 ${(live.rms * 100).toInt()}% · 音频帧 ${live.frames}", style = MaterialTheme.typography.bodySmall)
+                        if (live.networkRttMs > 0) Text("网络往返 ${live.networkRttMs} ms", style = MaterialTheme.typography.bodySmall)
                         if (live.error.isNotEmpty()) Text(live.error, color = MaterialTheme.colorScheme.error)
                         if (notice.isNotEmpty()) Text(notice)
                         if (!live.active) Button(onClick = { requestStart() }, modifier = Modifier.fillMaxWidth()) { Text("授权并开始") }
@@ -106,20 +120,26 @@ class MainActivity : ComponentActivity() {
                         }
                         HorizontalDivider()
                         Text("字幕样式", style = MaterialTheme.typography.titleMedium)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("显示日语原文")
-                            Switch(options.bilingual, { lifecycleScope.launch { settings.save(options.copy(bilingual = it)) } })
-                        }
                         Text("字号 ${options.fontSize.toInt()}")
                         Slider(options.fontSize, { lifecycleScope.launch { settings.save(options.copy(fontSize = it)) } }, valueRange = 14f..36f)
-                        Text("字幕背景透明度")
-                        Slider(options.opacity, { lifecycleScope.launch { settings.save(options.copy(opacity = it)) } }, valueRange = .15f..1f)
+                        Text("背景透明度 ${((1f - options.opacity) * 100).toInt()}%（100% 完全透明）")
+                        Slider(1f - options.opacity, { lifecycleScope.launch { settings.save(options.copy(opacity = 1f - it)) } }, valueRange = 0f..1f)
+                        Text("整层字幕透明度 ${((1f - options.subtitleOpacity) * 100).toInt()}%（不影响关闭按钮）")
+                        Slider(1f - options.subtitleOpacity, { lifecycleScope.launch { settings.save(options.copy(subtitleOpacity = 1f - it)) } }, valueRange = 0f..1f)
                         if (live.translated.isNotEmpty()) Card { Column(Modifier.padding(16.dp)) {
                             if (options.bilingual) Text(live.source)
                             Text(live.translated, fontWeight = FontWeight.Bold)
                         } }
                         Text("仅采集内部播放声音，不使用麦克风。默认不保存音频和字幕。后端联调模式会上传音频。", style = MaterialTheme.typography.bodySmall)
-                        Text("华为：若后台被系统结束，请在应用启动管理中检查后台运行设置。", style = MaterialTheme.typography.bodySmall)
+                        HorizontalDivider()
+                        Text("后台运行保护", style = MaterialTheme.typography.titleMedium)
+                        Text("华为：在应用启动管理中关闭自动管理，允许后台活动；在最近任务中锁定本应用。字幕运行时保留前台通知。", style = MaterialTheme.typography.bodySmall)
+                        Text("网络中断会保留当前字幕并重连，不再因短时断网自动退出。系统结束音频捕获后仍需重新授权。", style = MaterialTheme.typography.bodySmall)
+                        OutlinedButton(onClick = { openBackgroundSettings() }) { Text("打开华为启动管理 / 应用设置") }
+                        OutlinedButton(onClick = {
+                            runCatching { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                                .onFailure { openBackgroundSettings() }
+                        }) { Text("打开电池优化设置") }
                     }
                 }
             }
@@ -141,6 +161,14 @@ class MainActivity : ComponentActivity() {
             return
         }
         requestCapture()
+    }
+
+    private fun openBackgroundSettings() {
+        val huawei = Intent().setComponent(ComponentName("com.huawei.systemmanager",
+            "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"))
+        runCatching { startActivity(huawei) }.onFailure {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, "package:$packageName".toUri()))
+        }
     }
 
     private fun requestCapture() {

@@ -10,8 +10,8 @@ android {
         applicationId = "cn.jtranslate.live"
         minSdk = 29
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0-local"
+        versionCode = 3
+        versionName = "0.3.0"
     }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions {

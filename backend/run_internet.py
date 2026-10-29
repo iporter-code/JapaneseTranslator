@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import socket
 import sys
+import os
+import secrets
 
 from run_local import ROOT, ascii_workspace, prepare_environment
 
@@ -23,10 +25,12 @@ async def serve(args, root):
     tunnel = QuickTunnel(ROOT / '.tools/cloudflared/cloudflared.exe', args.port)
     task = server = None
     state = ROOT / '.tools/internet-endpoint.json'
+    stop_file = ROOT / '.tools' / f'internet-stop-{os.getpid()}-{secrets.token_hex(8)}.flag'
     try:
         origin = await tunnel.start()
         settings = replace(Settings.from_env(), public_base_url=origin)
-        server = uvicorn.Server(uvicorn.Config(create_app(settings), host='127.0.0.1', port=args.port,
+        app = create_app(settings)
+        server = uvicorn.Server(uvicorn.Config(app, host='127.0.0.1', port=args.port,
             ws_max_size=16384, access_log=False, timeout_graceful_shutdown=15))
         task = asyncio.create_task(server.serve())
         async with asyncio.timeout(120):
@@ -37,7 +41,8 @@ async def serve(args, root):
                 await asyncio.sleep(.1)
         await wait_public_ready(origin)
         state.write_text(json.dumps({'origin': origin, 'provider': 'local', 'ready': True,
-            'temporary_address': True, 'phone_extra_app_required': False}, indent=2), encoding='utf-8')
+            'temporary_address': True, 'phone_extra_app_required': False,
+            'server_pid': os.getpid(), 'launch_id': args.launch_id, 'stop_name': stop_file.name}, indent=2), encoding='utf-8')
         print(f'Phone server address: {origin}', flush=True)
         print('Ready: use the existing translation APK and your backend app access token. '
               'No Tailscale/VPN app is needed on the phone.', flush=True)
@@ -47,20 +52,25 @@ async def serve(args, root):
             sys.path.insert(0, str(ROOT / 'evaluation'))
             import streaming_smoke
             await streaming_smoke.main(argparse.Namespace(base=origin, samples=3, repeat=1,
-                output='streaming-internet.json'))
+                output=args.test_output))
             print('Internet audio translation self-test passed; service remains running.', flush=True)
         if args.check_only:
             return
         closed = asyncio.create_task(tunnel.process.wait())
+        async def wait_stop():
+            while not stop_file.exists():
+                await asyncio.sleep(.5)
+        stop_task = asyncio.create_task(wait_stop())
         try:
-            done, _ = await asyncio.wait([task, closed], return_when=asyncio.FIRST_COMPLETED)
+            done, _ = await asyncio.wait([task, closed, stop_task], return_when=asyncio.FIRST_COMPLETED)
             if closed in done and not task.done():
                 raise RuntimeError('Internet tunnel stopped; restart to obtain a new address')
             if task in done:
                 await task
         finally:
             closed.cancel()
-            await asyncio.gather(closed, return_exceptions=True)
+            stop_task.cancel()
+            await asyncio.gather(closed, stop_task, return_exceptions=True)
     finally:
         # Remove the external route before shutting down native model work.
         await tunnel.close()
@@ -71,8 +81,10 @@ async def serve(args, root):
         if state.exists():
             # The last URL is retained as a non-secret troubleshooting hint, not active.
             record = json.loads(state.read_text(encoding='utf-8'))
-            record['ready'] = False
-            state.write_text(json.dumps(record, indent=2), encoding='utf-8')
+            if record.get('server_pid') == os.getpid():
+                record['ready'] = False
+                state.write_text(json.dumps(record, indent=2), encoding='utf-8')
+        stop_file.unlink(missing_ok=True)
 
 
 def main():
@@ -81,6 +93,8 @@ def main():
     parser.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
     parser.add_argument('--self-test', action='store_true')
     parser.add_argument('--check-only', action='store_true')
+    parser.add_argument('--test-output', default='streaming-internet.json')
+    parser.add_argument('--launch-id', default='foreground')
     args = parser.parse_args()
     with ascii_workspace() as root:
         prepare_environment(root, args.device)

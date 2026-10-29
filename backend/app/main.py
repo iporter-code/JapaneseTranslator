@@ -50,6 +50,7 @@ def create_app(settings=None, local_runtime_factory=None):
             from .local_runtime import LocalRuntime
             local_runtime = (local_runtime_factory or LocalRuntime)(settings)
             await local_runtime.start()
+            app.state.local_runtime = local_runtime
         async def reap():
             while True:
                 await asyncio.sleep(2)
@@ -97,7 +98,8 @@ def create_app(settings=None, local_runtime_factory=None):
         return {'session_id': sid, 'stream_url': f'{ws}/v1/sessions/{sid}/stream',
                 'stream_token': token, 'expires_in': settings.max_session_seconds,
                 'connect_within_seconds': 120, 'provider': settings.provider,
-                'demo': settings.provider == 'mock', 'audio': body.audio.model_dump()}
+                'demo': settings.provider == 'mock', 'audio': body.audio.model_dump(),
+                'audio_compression': ['zlib']}
 
     @app.delete('/v1/sessions/{sid}')
     async def delete(sid: str, authorization: str = Header(default='')):
@@ -155,6 +157,7 @@ def create_app(settings=None, local_runtime_factory=None):
             tracker = FrameTracker()
             versions = {}
             begun = time.monotonic()
+            input_lag_ms = 0
 
             async def consume():
                 while True:
@@ -172,11 +175,13 @@ def create_app(settings=None, local_runtime_factory=None):
                     event = {'type': 'asr.final' if result.final else 'asr.partial',
                              'segment_id': key, 'source_revision': version,
                              'source_text': result.text, 'start_audio_ms': result.start_ms,
-                             'end_audio_ms': result.end_ms, 'asr_final': result.final}
+                             'end_audio_ms': result.end_ms, 'asr_final': result.final,
+                             'recognition_ms': result.processing_ms, 'server_input_lag_ms': input_lag_ms}
                     await publish(event)
                     scheduler.submit(event)
 
             async def receive():
+                nonlocal input_lag_ms
                 while True:
                     packet = await asyncio.wait_for(ws.receive(), 30)
                     if packet['type'] == 'websocket.disconnect':
@@ -184,6 +189,7 @@ def create_app(settings=None, local_runtime_factory=None):
                     if packet.get('bytes') is not None:
                         frame = AudioFrame.decode(packet['bytes'])
                         tracker.accept(frame)
+                        input_lag_ms = max(0, round((time.monotonic() - begun - tracker.next_sample / 16000) * 1000))
                         if tracker.next_sample / 16000 > time.monotonic() - begun + 3:
                             raise ProtocolError('audio_rate_exceeded')
                         await asyncio.wait_for(recognizer.push(frame.pcm), 5)

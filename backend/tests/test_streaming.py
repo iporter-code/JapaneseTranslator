@@ -69,7 +69,7 @@ class FakeRuntime:
     def new_vad(self):
         return vad
 
-    async def transcribe(self, pcm):
+    async def transcribe(self, pcm, final=True):
         self.calls.append(pcm)
         self.started.set()
         await self.release.wait()
@@ -120,7 +120,7 @@ def test_partial_requires_agreement_but_final_can_correct_it():
         runtime = FakeRuntime()
         hypotheses = iter(['木村さんは', '木村さんは写真を', '木村先生は写真を見せた。'])
         decoded = asyncio.Queue()
-        async def transcribe(pcm):
+        async def transcribe(pcm, final=True):
             text = next(hypotheses)
             decoded.put_nowait(text)
             return text

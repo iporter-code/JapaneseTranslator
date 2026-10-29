@@ -14,6 +14,7 @@ data class LiveState(
     val frames: Long = 0,
     val epoch: Int = 0,
     val lastSubtitleAt: Long = 0,
+    val networkRttMs: Long = 0,
     val error: String = ""
 )
 

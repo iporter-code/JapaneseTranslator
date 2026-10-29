@@ -22,10 +22,10 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'backend'))
 from app.protocol import AudioFrame
 from app.streaming import (PRE_ROLL_SECONDS, END_SILENCE_SECONDS,
-                           PARTIAL_INTERVAL_SECONDS, MAX_UTTERANCE_SECONDS)
+                           PARTIAL_INTERVAL_SECONDS, MAX_UTTERANCE_SECONDS, MIN_VOICE_SECONDS)
 
 
-async def stream(http, base, auth, pcm, epoch, expect_text=True):
+async def stream(http, base, auth, pcm, epoch, expect_text=True, transport_stats=None):
     response = await http.post(base + '/v1/sessions', headers=auth, json={})
     response.raise_for_status()
     info = response.json()
@@ -33,6 +33,8 @@ async def stream(http, base, auth, pcm, epoch, expect_text=True):
         await http.delete(base + '/v1/sessions/' + info['session_id'], headers=auth)
         raise RuntimeError('This client requires the real local provider')
     events = []
+    compress_audio = 'zlib' in info.get('audio_compression', [])
+    sent_bytes = 0
     try:
         async with connect(info['stream_url'], additional_headers={
                 'Authorization': 'Bearer ' + info['stream_token']}, open_timeout=10) as ws:
@@ -41,11 +43,14 @@ async def stream(http, base, auth, pcm, epoch, expect_text=True):
             assert ready['type'] == 'stream.ready' and not ready['demo']
             began = time.perf_counter()
             async def upload():
+                nonlocal sent_bytes
                 for sequence, start in enumerate(range(0, len(pcm), 3200)):
                     data = pcm[start:start + 3200]
                     # Send only after this entire 100 ms frame would have been captured.
                     await asyncio.sleep(max(0, began + (start + len(data)) / 32000 - time.perf_counter()))
-                    await ws.send(AudioFrame(sequence, start // 2, len(data) // 2, data).encode())
+                    packet = AudioFrame(sequence, start // 2, len(data) // 2, data).encode(compress=compress_audio)
+                    sent_bytes += len(packet)
+                    await ws.send(packet)
                 # Let the final audio play, then allow native work + translations to settle.
                 await asyncio.sleep(max(0, began + len(pcm) / 32000 - time.perf_counter()) + 3)
                 await ws.send(json.dumps({'type': 'ping'}))
@@ -73,6 +78,10 @@ async def stream(http, base, auth, pcm, epoch, expect_text=True):
                 await asyncio.gather(uploader, return_exceptions=True)
     finally:
         await http.delete(base + '/v1/sessions/' + info['session_id'], headers=auth)
+    if transport_stats is not None:
+        transport_stats.update({'zlib_negotiated': compress_audio, 'application_packet_bytes': sent_bytes,
+            'raw_pcm_packet_bytes': len(pcm) + ((len(pcm) + 3199) // 3200) * 24,
+            'note': 'Application packet size only; excludes WebSocket/TLS and their compression.'})
     return events
 
 
@@ -94,7 +103,8 @@ async def main(args):
             pcm.extend(b'\0' * 38400)  # 1.2 seconds between clips.
     async with httpx.AsyncClient(trust_env=False, timeout=15) as http:
         health = (await http.get(args.base + '/health')).json()
-        first = await stream(http, args.base, auth, bytes(pcm), epoch=1)
+        transport_stats = {}
+        first = await stream(http, args.base, auth, bytes(pcm), epoch=1, transport_stats=transport_stats)
         # A new session after stop must not receive old text; silence must not invent dialogue.
         silence = await stream(http, args.base, auth, b'\0' * (32000 * 6), epoch=2, expect_text=False)
     finals = [event for event in first if event['type'] == 'translation.final']
@@ -111,10 +121,12 @@ async def main(args):
     manifest = json.loads((ROOT / 'evaluation/model-manifest.json').read_text(encoding='utf-8'))
     report = {'tested_at_utc': datetime.now(timezone.utc).isoformat(),
         'provider_health': health, 'audio_seconds': len(pcm) / 32000, 'clips': coverage,
+        'transport': transport_stats,
         'frame_pacing': 'send_after_full_frame_capture',
         'streaming_parameters': {'pre_roll_seconds': PRE_ROLL_SECONDS,
             'end_silence_seconds': END_SILENCE_SECONDS, 'partial_interval_seconds': PARTIAL_INTERVAL_SECONDS,
-            'max_utterance_seconds': MAX_UTTERANCE_SECONDS, 'stable_prefix_min_characters': 4},
+            'max_utterance_seconds': MAX_UTTERANCE_SECONDS, 'min_voice_seconds': MIN_VOICE_SECONDS,
+            'stable_prefix_min_characters': 4, 'confirmed_short_interjections_allowed': True},
         'models': {'asr': manifest['asr'], 'translation': manifest['translation']},
         'translation_final_count': len(finals), 'events': first,
         'silence_new_epoch_events': silence, 'phone_tested': False,

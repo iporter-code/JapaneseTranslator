@@ -18,7 +18,8 @@ private val Context.store by preferencesDataStore("settings")
 
 data class Options(val localDemo: Boolean = true, val server: String = "http://127.0.0.1:8765",
     val bilingual: Boolean = true, val fontSize: Float = 20f, val opacity: Float = .75f,
-    val portraitX: Int = 20, val portraitY: Int = 180, val landscapeX: Int = 20, val landscapeY: Int = 40)
+    val portraitX: Int = 20, val portraitY: Int = 180, val landscapeX: Int = 20, val landscapeY: Int = 40,
+    val subtitleOpacity: Float = 1f)
 
 class AppSettings(private val context: Context) {
     private val local = booleanPreferencesKey("local_demo")
@@ -26,15 +27,18 @@ class AppSettings(private val context: Context) {
     private val bilingual = booleanPreferencesKey("bilingual")
     private val font = floatPreferencesKey("font")
     private val opacity = floatPreferencesKey("opacity")
+    private val subtitleOpacity = floatPreferencesKey("subtitle_opacity")
     val options = context.store.data.map { p -> Options(p[local] ?: true, p[server] ?: "http://127.0.0.1:8765",
         p[bilingual] ?: true, p[font] ?: 20f, p[opacity] ?: .75f,
         p[intPreferencesKey("px")] ?: 20, p[intPreferencesKey("py")] ?: 180,
-        p[intPreferencesKey("lx")] ?: 20, p[intPreferencesKey("ly")] ?: 40) }
+        p[intPreferencesKey("lx")] ?: 20, p[intPreferencesKey("ly")] ?: 40,
+        p[subtitleOpacity] ?: 1f) }
 
     suspend fun save(value: Options) {
         context.store.edit { p ->
             p[local] = value.localDemo; p[server] = value.server.trim().trimEnd('/')
             p[bilingual] = value.bilingual; p[font] = value.fontSize; p[opacity] = value.opacity
+            p[subtitleOpacity] = value.subtitleOpacity
         }
     }
 
