@@ -1,0 +1,204 @@
+{
+  "tested_at_utc": "2026-10-29T09:19:25.797542+00:00",
+  "provider_health": {
+    "status": "ok",
+    "provider": "local",
+    "demo": false,
+    "ready": true,
+    "max_sessions": 1
+  },
+  "audio_seconds": 20.584,
+  "clips": [
+    {
+      "file": "ja_0000.wav",
+      "start_seconds": 0.4,
+      "end_seconds": 6.064,
+      "final_segments": 1,
+      "last_translation_after_clip_end_seconds": 3.7007189000017533
+    },
+    {
+      "file": "ja_0001.wav",
+      "start_seconds": 7.264,
+      "end_seconds": 12.808,
+      "final_segments": 1,
+      "last_translation_after_clip_end_seconds": 5.503284400002478
+    },
+    {
+      "file": "ja_0002.wav",
+      "start_seconds": 14.008,
+      "end_seconds": 19.384,
+      "final_segments": 1,
+      "last_translation_after_clip_end_seconds": 6.490072099999466
+    }
+  ],
+  "frame_pacing": "send_after_full_frame_capture",
+  "streaming_parameters": {
+    "pre_roll_seconds": 0.4,
+    "end_silence_seconds": 0.6,
+    "partial_interval_seconds": 1.2,
+    "max_utterance_seconds": 8.0,
+    "stable_prefix_min_characters": 4
+  },
+  "models": {
+    "asr": {
+      "repository": "mobiuslabsgmbh/faster-whisper-large-v3-turbo",
+      "original_model": "openai/whisper-large-v3-turbo",
+      "revision": "0a363e9161cbc7ed1431c9597a8ceaf0c4f78fcf",
+      "weight_file": "model.bin",
+      "weight_bytes": 1617884929,
+      "weight_sha256": "e76620f83d5f5b69efd3d87e3dc180c1bd21df9fbebacfd4335e5e1efcc018da"
+    },
+    "translation": {
+      "repository": "tencent/Hy-MT2-1.8B-GGUF",
+      "revision": "a0c709d9fac510f2c807aa3af52872340dc37a4a",
+      "weight_file": "Hy-MT2-1.8B-Q4_K_M.gguf",
+      "weight_bytes": 1133080448,
+      "weight_sha256": "dc5f44fcf1fa496ee7ad725982c0c8c553a4de00259b53af84c4b89fb0c06699",
+      "mirror": "https://modelscope.cn/models/Tencent-Hunyuan/Hy-MT2-1.8B-GGUF/resolve/master/Hy-MT2-1.8B-Q4_K_M.gguf"
+    }
+  },
+  "translation_final_count": 3,
+  "events": [
+    {
+      "epoch": 1,
+      "type": "asr.final",
+      "segment_id": "local_0",
+      "source_revision": 1,
+      "source_text": "木村様は私にシャンシンを見せてくれました。",
+      "start_audio_ms": 592,
+      "end_audio_ms": 5952,
+      "asr_final": true,
+      "received_seconds": 9.65562570000111,
+      "lag_after_event_audio_end_seconds": 3.70362570000111
+    },
+    {
+      "epoch": 1,
+      "type": "translation.final",
+      "segment_id": "local_0",
+      "source_revision": 1,
+      "source_text": "木村様は私にシャンシンを見せてくれました。",
+      "start_audio_ms": 592,
+      "end_audio_ms": 5952,
+      "asr_final": true,
+      "translated_text": "木村先生让我见到了香欣。",
+      "translation_revision": 1,
+      "translation_final": true,
+      "received_seconds": 9.764718900001753,
+      "lag_after_event_audio_end_seconds": 3.8127189000017534
+    },
+    {
+      "epoch": 1,
+      "type": "asr.partial",
+      "segment_id": "local_1",
+      "source_revision": 1,
+      "source_text": "Tanaka",
+      "start_audio_ms": 7760,
+      "end_audio_ms": 10176,
+      "asr_final": false,
+      "received_seconds": 14.353911800000787,
+      "lag_after_event_audio_end_seconds": 4.177911800000787
+    },
+    {
+      "epoch": 1,
+      "type": "translation.partial",
+      "segment_id": "local_1",
+      "source_revision": 1,
+      "source_text": "Tanaka",
+      "start_audio_ms": 7760,
+      "end_audio_ms": 10176,
+      "asr_final": false,
+      "translated_text": "田中",
+      "translation_revision": 1,
+      "translation_final": false,
+      "received_seconds": 15.10294470000008,
+      "lag_after_event_audio_end_seconds": 4.92694470000008
+    },
+    {
+      "epoch": 1,
+      "type": "asr.final",
+      "segment_id": "local_1",
+      "source_revision": 2,
+      "source_text": "田中さんの奥さんは大学の先生です。",
+      "start_audio_ms": 7760,
+      "end_audio_ms": 12704,
+      "asr_final": true,
+      "received_seconds": 18.311261200000445,
+      "lag_after_event_audio_end_seconds": 5.607261200000444
+    },
+    {
+      "epoch": 1,
+      "type": "translation.final",
+      "segment_id": "local_1",
+      "source_revision": 2,
+      "source_text": "田中さんの奥さんは大学の先生です。",
+      "start_audio_ms": 7760,
+      "end_audio_ms": 12704,
+      "asr_final": true,
+      "translated_text": "田中先生的妻子是大学老师。",
+      "translation_revision": 2,
+      "translation_final": true,
+      "received_seconds": 18.311284400002478,
+      "lag_after_event_audio_end_seconds": 5.607284400002477
+    },
+    {
+      "epoch": 1,
+      "type": "asr.partial",
+      "segment_id": "local_2",
+      "source_revision": 1,
+      "source_text": "私は松井さん",
+      "start_audio_ms": 14864,
+      "end_audio_ms": 17280,
+      "asr_final": false,
+      "received_seconds": 24.62062320000041,
+      "lag_after_event_audio_end_seconds": 7.340623200000408
+    },
+    {
+      "epoch": 1,
+      "type": "translation.partial",
+      "segment_id": "local_2",
+      "source_revision": 1,
+      "source_text": "私は松井さん",
+      "start_audio_ms": 14864,
+      "end_audio_ms": 17280,
+      "asr_final": false,
+      "translated_text": "我是松井先生",
+      "translation_revision": 1,
+      "translation_final": false,
+      "received_seconds": 25.388564900000347,
+      "lag_after_event_audio_end_seconds": 8.108564900000346
+    },
+    {
+      "epoch": 1,
+      "type": "asr.final",
+      "segment_id": "local_2",
+      "source_revision": 2,
+      "source_text": "私は松井さんが書いた作文を読みました。",
+      "start_audio_ms": 14864,
+      "end_audio_ms": 18368,
+      "asr_final": true,
+      "received_seconds": 25.728762200000347,
+      "lag_after_event_audio_end_seconds": 7.360762200000348
+    },
+    {
+      "epoch": 1,
+      "type": "translation.final",
+      "segment_id": "local_2",
+      "source_revision": 2,
+      "source_text": "私は松井さんが書いた作文を読みました。",
+      "start_audio_ms": 14864,
+      "end_audio_ms": 18368,
+      "asr_final": true,
+      "translated_text": "我读了松井先生写的作文。",
+      "translation_revision": 2,
+      "translation_final": true,
+      "received_seconds": 25.874072099999466,
+      "lag_after_event_audio_end_seconds": 7.506072099999468
+    }
+  ],
+  "silence_new_epoch_events": [],
+  "phone_tested": false,
+  "median_lag_after_event_audio_end_seconds": 5.607284400002477,
+  "p95_lag_after_event_audio_end_seconds": 7.506072099999468,
+  "p95_method": "nearest_rank",
+  "note": "Real-time loopback replay; end_audio_ms includes VAD trailing silence. Not phone latency, semantic accuracy, or adult-film validation."
+}

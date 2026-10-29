@@ -90,7 +90,9 @@ def create_app(settings=None, local_runtime_factory=None):
             raise HTTPException(429, 'session_limit')
         sid, token = secrets.token_urlsafe(18), secrets.token_urlsafe(32)
         sessions[sid] = Session(token)
-        base = str(request.base_url).rstrip('/')
+        # An explicit HTTPS origin also works when a private TLS proxy forwards
+        # plain HTTP to loopback without supplying X-Forwarded-Proto.
+        base = settings.public_base_url or str(request.base_url).rstrip('/')
         ws = ('wss' + base[5:]) if base.startswith('https:') else ('ws' + base[4:])
         return {'session_id': sid, 'stream_url': f'{ws}/v1/sessions/{sid}/stream',
                 'stream_token': token, 'expires_in': settings.max_session_seconds,

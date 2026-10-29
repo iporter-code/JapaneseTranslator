@@ -1,7 +1,22 @@
 from dataclasses import dataclass
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 from dotenv import load_dotenv
+
+def validate_public_origin(value):
+    if not value:
+        return ''
+    try:
+        parsed = urlsplit(value)
+        port = parsed.port
+        if (parsed.scheme != 'https' or not parsed.hostname or parsed.username is not None
+                or parsed.password is not None or parsed.query or parsed.fragment
+                or parsed.path not in ('', '/') or port == 0 or any(c.isspace() for c in value)):
+            raise ValueError()
+    except ValueError:
+        raise ValueError('PUBLIC_BASE_URL must be an HTTPS origin without credentials, path or query') from None
+    return value.rstrip('/')
 
 @dataclass(frozen=True)
 class Settings:
@@ -19,6 +34,10 @@ class Settings:
     local_translation_path: str = ''
     local_device: str = 'cuda'
     local_llama_port: int = 8788
+    public_base_url: str = ''
+
+    def __post_init__(self):
+        object.__setattr__(self, 'public_base_url', validate_public_origin(self.public_base_url))
 
     @classmethod
     def from_env(cls):
@@ -38,7 +57,8 @@ class Settings:
                        os.getenv('LOCAL_ASR_PATH') or str(root / 'evaluation/models/whisper-turbo'),
                        os.getenv('LOCAL_LLAMA_PATH') or str(root / '.tools/llama-b11979/llama-server.exe'),
                        os.getenv('LOCAL_TRANSLATION_PATH') or str(root / 'evaluation/models/hy-mt2/Hy-MT2-1.8B-Q4_K_M.gguf'),
-                       os.getenv('LOCAL_DEVICE', 'cuda'), int(os.getenv('LOCAL_LLAMA_PORT', '8788')))
+                       os.getenv('LOCAL_DEVICE', 'cuda'), int(os.getenv('LOCAL_LLAMA_PORT', '8788')),
+                       os.getenv('PUBLIC_BASE_URL', ''))
         if settings.max_session_seconds <= 0 or settings.max_sessions <= 0:
             raise ValueError('Session limits must be positive')
         if provider == 'azure' and not all((settings.speech_key, settings.speech_region,

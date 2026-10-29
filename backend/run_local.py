@@ -47,9 +47,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--device', choices=['cuda', 'cpu'], default='cuda')
+    parser.add_argument('--public-base-url', default='')
     args = parser.parse_args()
     with ascii_workspace() as root:
         prepare_environment(root, args.device)
+        if args.public_base_url:
+            from app.config import validate_public_origin
+            os.environ['PUBLIC_BASE_URL'] = validate_public_origin(args.public_base_url)
         import uvicorn
         uvicorn.run('app.main:create_app', factory=True, host='127.0.0.1', port=args.port,
                     ws_max_size=16384, access_log=False, timeout_graceful_shutdown=15)
