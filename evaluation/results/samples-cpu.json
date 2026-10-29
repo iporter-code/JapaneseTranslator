@@ -1,0 +1,67 @@
+{
+  "dataset": "japanese-asr/ja_asr.common_voice_8_0",
+  "split": "test",
+  "selection": "first rows with audio duration 2..15 seconds",
+  "rows": [
+    {
+      "id": 0,
+      "file": "ja_0000.wav",
+      "reference": "木村さんはわたしに写真を見せてくれました。.",
+      "duration_seconds": 5.664
+    },
+    {
+      "id": 1,
+      "file": "ja_0001.wav",
+      "reference": "田中さんの奥さんは大学の先生です。.",
+      "duration_seconds": 5.544
+    },
+    {
+      "id": 2,
+      "file": "ja_0002.wav",
+      "reference": "わたしは松井さんが書いた作文を読みました。.",
+      "duration_seconds": 5.376
+    },
+    {
+      "id": 3,
+      "file": "ja_0003.wav",
+      "reference": "木村さんに電話を貸してもらいました。.",
+      "duration_seconds": 4.176
+    },
+    {
+      "id": 4,
+      "file": "ja_0004.wav",
+      "reference": "森永のおいしい牛乳は濃い青色に牛乳瓶をあしらったデザインのパック牛乳である.",
+      "duration_seconds": 6.984
+    },
+    {
+      "id": 5,
+      "file": "ja_0005.wav",
+      "reference": "きのうは八時間寝ました。.",
+      "duration_seconds": 3.096
+    },
+    {
+      "id": 6,
+      "file": "ja_0006.wav",
+      "reference": "田中さんの右に山田さんがいます。.",
+      "duration_seconds": 3.576
+    },
+    {
+      "id": 7,
+      "file": "ja_0007.wav",
+      "reference": "日本人は、決して、ユーモアと無縁な人種ではなかった。.",
+      "duration_seconds": 5.976
+    },
+    {
+      "id": 8,
+      "file": "ja_0008.wav",
+      "reference": "ユーモアとは、高慢このうえない解毒剤だ。.",
+      "duration_seconds": 4.464
+    },
+    {
+      "id": 9,
+      "file": "ja_0009.wav",
+      "reference": "わたしは静かできれいな所に住みたいです。.",
+      "duration_seconds": 4.224
+    }
+  ]
+}

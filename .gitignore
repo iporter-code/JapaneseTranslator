@@ -16,3 +16,6 @@ local.properties
 artifacts/
 .idea/
 evaluation/private/
+evaluation/models/
+evaluation/samples/
+evaluation/.venv-models/

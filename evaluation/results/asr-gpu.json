@@ -1,0 +1,123 @@
+{
+  "model": "Whisper large-v3-turbo / CTranslate2",
+  "device": "cuda",
+  "compute_type": "int8_float16",
+  "load_seconds": 4.711115599999175,
+  "warmup_seconds": 0.7927333000006911,
+  "beam_size": 5,
+  "rows": [
+    {
+      "id": 0,
+      "file": "ja_0000.wav",
+      "reference": "木村さんはわたしに写真を見せてくれました。.",
+      "duration_seconds": 5.664,
+      "hypothesis": "木村様は私にシャンシンを見せてくれました。",
+      "seconds": 0.39932219999900553,
+      "rtf": 0.07050180084728205,
+      "edit_distance": 9,
+      "reference_characters": 20
+    },
+    {
+      "id": 1,
+      "file": "ja_0001.wav",
+      "reference": "田中さんの奥さんは大学の先生です。.",
+      "duration_seconds": 5.544,
+      "hypothesis": "田中さんの奥さんは大学の先生です。",
+      "seconds": 0.40273379999962344,
+      "rtf": 0.0726431818181139,
+      "edit_distance": 0,
+      "reference_characters": 16
+    },
+    {
+      "id": 2,
+      "file": "ja_0002.wav",
+      "reference": "わたしは松井さんが書いた作文を読みました。.",
+      "duration_seconds": 5.376,
+      "hypothesis": "私は松井さんが書いた作文を読みました。",
+      "seconds": 0.42528179999862914,
+      "rtf": 0.07910747767831643,
+      "edit_distance": 3,
+      "reference_characters": 20
+    },
+    {
+      "id": 3,
+      "file": "ja_0003.wav",
+      "reference": "木村さんに電話を貸してもらいました。.",
+      "duration_seconds": 4.176,
+      "hypothesis": "木村さんに電話を貸してもらいました。",
+      "seconds": 0.4338043000007019,
+      "rtf": 0.10388034003848226,
+      "edit_distance": 0,
+      "reference_characters": 17
+    },
+    {
+      "id": 4,
+      "file": "ja_0004.wav",
+      "reference": "森永のおいしい牛乳は濃い青色に牛乳瓶をあしらったデザインのパック牛乳である.",
+      "duration_seconds": 6.984,
+      "hypothesis": "森永のおいしい牛乳は濃い青色に牛乳瓶をあしらったデザインのパック牛乳である。",
+      "seconds": 0.5348925999987841,
+      "rtf": 0.07658828751414434,
+      "edit_distance": 0,
+      "reference_characters": 37
+    },
+    {
+      "id": 5,
+      "file": "ja_0005.wav",
+      "reference": "きのうは八時間寝ました。.",
+      "duration_seconds": 3.096,
+      "hypothesis": "昨日は8時間寝ました。",
+      "seconds": 0.37932309999996505,
+      "rtf": 0.12252038113693961,
+      "edit_distance": 4,
+      "reference_characters": 11
+    },
+    {
+      "id": 6,
+      "file": "ja_0006.wav",
+      "reference": "田中さんの右に山田さんがいます。.",
+      "duration_seconds": 3.576,
+      "hypothesis": "田中さんの右に山田さんがいます。",
+      "seconds": 0.34259949999977835,
+      "rtf": 0.09580522930642571,
+      "edit_distance": 0,
+      "reference_characters": 15
+    },
+    {
+      "id": 7,
+      "file": "ja_0007.wav",
+      "reference": "日本人は、決して、ユーモアと無縁な人種ではなかった。.",
+      "duration_seconds": 5.976,
+      "hypothesis": "日本人は決してユーモアと無縁な人種ではなかった",
+      "seconds": 0.3621995999983483,
+      "rtf": 0.06060903614430192,
+      "edit_distance": 0,
+      "reference_characters": 23
+    },
+    {
+      "id": 8,
+      "file": "ja_0008.wav",
+      "reference": "ユーモアとは、高慢このうえない解毒剤だ。.",
+      "duration_seconds": 4.464,
+      "hypothesis": "ユーモアとは高慢この上ない下毒体だ。",
+      "seconds": 0.40688200000113284,
+      "rtf": 0.09114740143394552,
+      "edit_distance": 4,
+      "reference_characters": 18
+    },
+    {
+      "id": 9,
+      "file": "ja_0009.wav",
+      "reference": "わたしは静かできれいな所に住みたいです。.",
+      "duration_seconds": 4.224,
+      "hypothesis": "私は静かできれいなところに住みたいです。",
+      "seconds": 0.39621400000032736,
+      "rtf": 0.09380066287886538,
+      "edit_distance": 6,
+      "reference_characters": 19
+    }
+  ],
+  "weighted_cer": 0.1326530612244898,
+  "aggregate_rtf": 0.08319586185811524,
+  "gpu_after": "NVIDIA GeForce RTX 4050 Laptop GPU, 6141 MiB, 3620 MiB, 2301 MiB"
+}

@@ -1,0 +1,280 @@
+{
+  "model": "tencent/Hy-MT2-1.8B-GGUF",
+  "quantization": "Q4_K_M",
+  "warmup_seconds": 0.10699340000064694,
+  "rows": [
+    {
+      "case": "simple",
+      "source": "今日はここで待っていて。",
+      "reference": "今天就在这里等着。",
+      "translation": "今天就在这里等着吧。",
+      "seconds": 0.07043250000060652,
+      "usage": {
+        "completion_tokens": 7,
+        "prompt_tokens": 26,
+        "total_tokens": 33,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 26,
+        "prompt_ms": 15.755,
+        "prompt_per_token_ms": 0.6059615384615384,
+        "prompt_per_second": 1650.2697556331323,
+        "predicted_n": 7,
+        "predicted_ms": 52.349,
+        "predicted_per_token_ms": 8.724833333333333,
+        "predicted_per_second": 114.61536992110643
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "negation",
+      "source": "明日は来なくてもいいですが、電話だけはしてください。",
+      "reference": "明天可以不来，但请务必打个电话。",
+      "translation": "明天不必来，但请至少打电话。",
+      "seconds": 0.09520539999903121,
+      "usage": {
+        "completion_tokens": 10,
+        "prompt_tokens": 35,
+        "total_tokens": 45,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 35,
+        "prompt_ms": 16.556,
+        "prompt_per_token_ms": 0.47302857142857146,
+        "prompt_per_second": 2114.037207054844,
+        "predicted_n": 10,
+        "predicted_ms": 76.21,
+        "predicted_per_token_ms": 8.467777777777776,
+        "predicted_per_second": 118.09473822333028
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "not_yet",
+      "source": "彼女はまだ来ていない。",
+      "reference": "她还没来。",
+      "translation": "她还没有来。",
+      "seconds": 0.06273719999990135,
+      "usage": {
+        "completion_tokens": 6,
+        "prompt_tokens": 27,
+        "total_tokens": 33,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 27,
+        "prompt_ms": 14.452,
+        "prompt_per_token_ms": 0.5352592592592592,
+        "prompt_per_second": 1868.2535289233324,
+        "predicted_n": 6,
+        "predicted_ms": 43.767,
+        "predicted_per_token_ms": 8.753400000000001,
+        "predicted_per_second": 114.24132337148993
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "colloquial",
+      "source": "ちょっと待って、それは聞いてないよ。",
+      "reference": "等一下，这件事我可没听说过。",
+      "translation": "等一下，我没听过那个。",
+      "seconds": 0.08327029999963997,
+      "usage": {
+        "completion_tokens": 9,
+        "prompt_tokens": 31,
+        "total_tokens": 40,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 31,
+        "prompt_ms": 14.509,
+        "prompt_per_token_ms": 0.46803225806451615,
+        "prompt_per_second": 2136.6048659452754,
+        "predicted_n": 9,
+        "predicted_ms": 66.451,
+        "predicted_per_token_ms": 8.306375,
+        "predicted_per_second": 120.38945990278552
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "profanity",
+      "source": "くそっ、また失敗した。",
+      "reference": "可恶，又失败了。",
+      "translation": "该死，又失败了。",
+      "seconds": 0.06974459999946703,
+      "usage": {
+        "completion_tokens": 7,
+        "prompt_tokens": 28,
+        "total_tokens": 35,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 28,
+        "prompt_ms": 14.209,
+        "prompt_per_token_ms": 0.5074642857142857,
+        "prompt_per_second": 1970.5820254768107,
+        "predicted_n": 7,
+        "predicted_ms": 51.455,
+        "predicted_per_token_ms": 8.575833333333334,
+        "predicted_per_second": 116.6067437566806
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "adult_label",
+      "source": "この動画には成人向けの表現が含まれています。",
+      "reference": "这个视频包含成人向的表达。",
+      "translation": "该视频包含适合成人观看的内容。",
+      "seconds": 0.09209829999963404,
+      "usage": {
+        "completion_tokens": 10,
+        "prompt_tokens": 34,
+        "total_tokens": 44,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 34,
+        "prompt_ms": 15.431,
+        "prompt_per_token_ms": 0.45385294117647057,
+        "prompt_per_second": 2203.3568790097856,
+        "predicted_n": 10,
+        "predicted_ms": 73.949,
+        "predicted_per_token_ms": 8.216555555555555,
+        "predicted_per_second": 121.70549973630476
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "consent",
+      "source": "嫌なら、無理に続けなくていい。",
+      "reference": "不愿意的话，不用勉强继续。",
+      "translation": "嫌的话，就不用勉强继续了。",
+      "seconds": 0.09800080000059097,
+      "usage": {
+        "completion_tokens": 10,
+        "prompt_tokens": 31,
+        "total_tokens": 41,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 31,
+        "prompt_ms": 14.829,
+        "prompt_per_token_ms": 0.47835483870967743,
+        "prompt_per_second": 2090.498347831951,
+        "predicted_n": 10,
+        "predicted_ms": 78.911,
+        "predicted_per_token_ms": 8.767888888888889,
+        "predicted_per_second": 114.05254020352042
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "sexual_health",
+      "source": "避妊具を正しく使用してください。",
+      "reference": "请正确使用避孕用具。",
+      "translation": "请正确使用避孕工具。",
+      "seconds": 0.09390759999951115,
+      "usage": {
+        "completion_tokens": 7,
+        "prompt_tokens": 27,
+        "total_tokens": 34,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 27,
+        "prompt_ms": 14.716,
+        "prompt_per_token_ms": 0.545037037037037,
+        "prompt_per_second": 1834.7377004620823,
+        "predicted_n": 7,
+        "predicted_ms": 52.616,
+        "predicted_per_token_ms": 8.769333333333334,
+        "predicted_per_second": 114.03375399118138
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "romance",
+      "source": "彼は彼女の手をそっと握った。",
+      "reference": "他轻轻握住了她的手。",
+      "translation": "他轻轻握住了她的手。",
+      "seconds": 0.07811260000016773,
+      "usage": {
+        "completion_tokens": 8,
+        "prompt_tokens": 30,
+        "total_tokens": 38,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 30,
+        "prompt_ms": 14.924,
+        "prompt_per_token_ms": 0.49746666666666667,
+        "prompt_per_second": 2010.1849370142052,
+        "predicted_n": 8,
+        "predicted_ms": 61.143,
+        "predicted_per_token_ms": 8.734714285714286,
+        "predicted_per_second": 114.48571381842567
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "numbers",
+      "source": "午後三時半までに二千五百円を払ってください。",
+      "reference": "请在下午三点半之前支付两千五百日元。",
+      "translation": "下午三点半前支付二千五百日元。",
+      "seconds": 0.12032639999961248,
+      "usage": {
+        "completion_tokens": 10,
+        "prompt_tokens": 35,
+        "total_tokens": 45,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      },
+      "timings": {
+        "cache_n": 0,
+        "prompt_n": 35,
+        "prompt_ms": 16.069,
+        "prompt_per_token_ms": 0.4591142857142857,
+        "prompt_per_second": 2178.1069139336614,
+        "predicted_n": 10,
+        "predicted_ms": 78.199,
+        "predicted_per_token_ms": 8.688777777777778,
+        "predicted_per_second": 115.09098581823297
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "median_seconds": 0.087684299999637,
+  "max_seconds": 0.12032639999961248,
+  "gpu_after": "NVIDIA GeForce RTX 4050 Laptop GPU, 6141 MiB, 4967 MiB, 954 MiB"
+}

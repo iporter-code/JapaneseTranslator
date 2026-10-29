@@ -1,0 +1,25 @@
+{
+  "load_seconds": 1.66789769999923,
+  "pid": 37884,
+  "command": [
+    "Q:\\.tools\\llama-b11979\\llama-server.exe",
+    "-m",
+    "Q:\\evaluation\\models\\hy-mt2\\Hy-MT2-1.8B-Q4_K_M.gguf",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "8788",
+    "-ngl",
+    "99",
+    "-c",
+    "2048",
+    "--parallel",
+    "1",
+    "--threads",
+    "8",
+    "-lv",
+    "4"
+  ],
+  "available_devices": "Available devices:\n  CUDA0: NVIDIA GeForce RTX 4050 Laptop GPU (6140 MiB, 5080 MiB free)\n",
+  "requested_gpu_layers": 99
+}

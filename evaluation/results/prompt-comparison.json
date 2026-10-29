@@ -1,0 +1,50 @@
+[
+  {
+    "source": "木村さんに電話を貸してもらいました。",
+    "expected_relation": "我从木村那里借来电话",
+    "default": "借给了木村先生电话。",
+    "default_seconds": 0.08859339999980875,
+    "faithful": "我借了木村先生的电话。",
+    "faithful_seconds": 0.11015079999924637
+  },
+  {
+    "source": "木村さんに電話を貸してあげました。",
+    "expected_relation": "我把电话借给木村",
+    "default": "把电话借给了木村先生。",
+    "default_seconds": 0.09513669999978447,
+    "faithful": "我借给了木村先生电话用。",
+    "faithful_seconds": 0.09594809999907739
+  },
+  {
+    "source": "田中さんに本を読んでもらいました。",
+    "expected_relation": "田中给我读书",
+    "default": "让田中先生读了书。",
+    "default_seconds": 0.09153789999982109,
+    "faithful": "我让田中先生读了书。",
+    "faithful_seconds": 0.09776459999920917
+  },
+  {
+    "source": "嫌なら、無理に続けなくていい。",
+    "expected_relation": "不愿意就不必勉强继续",
+    "default": "嫌的话，就不用勉强继续了。",
+    "default_seconds": 0.10318519999964337,
+    "faithful": "如果不喜欢，就不用勉强继续下去。",
+    "faithful_seconds": 0.09403810000003432
+  },
+  {
+    "source": "くそっ、また失敗した。",
+    "expected_relation": "保留粗口语气与再次失败含义",
+    "default": "该死，又失败了。",
+    "default_seconds": 0.07909739999922749,
+    "faithful": "该死，又失败了。",
+    "faithful_seconds": 0.07243339999877207
+  },
+  {
+    "source": "避妊具を正しく使用してください。",
+    "expected_relation": "正确使用避孕用品",
+    "default": "请正确使用避孕工具。",
+    "default_seconds": 0.0774976999982755,
+    "faithful": "请正确使用避孕工具。",
+    "faithful_seconds": 0.08006819999900472
+  }
+]

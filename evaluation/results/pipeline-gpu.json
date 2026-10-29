@@ -1,0 +1,62 @@
+{
+  "both_models_resident": true,
+  "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU, 6141 MiB, 5098 MiB, 823 MiB",
+  "rows": [
+    {
+      "id": 0,
+      "file": "ja_0000.wav",
+      "reference": "木村さんはわたしに写真を見せてくれました。.",
+      "duration_seconds": 5.664,
+      "recognized": "木村様は私にシャンシンを見せてくれました。",
+      "translation": "木村先生让我见到了香欣。",
+      "asr_seconds": 0.35890850000032515,
+      "translation_seconds": 0.09574950000023819,
+      "total_seconds_after_audio_ready": 0.4547304999996413
+    },
+    {
+      "id": 1,
+      "file": "ja_0001.wav",
+      "reference": "田中さんの奥さんは大学の先生です。.",
+      "duration_seconds": 5.544,
+      "recognized": "田中さんの奥さんは大学の先生です。",
+      "translation": "田中先生的妻子是大学老师。",
+      "asr_seconds": 0.3862931999992725,
+      "translation_seconds": 0.08874439999999595,
+      "total_seconds_after_audio_ready": 0.4751169999999547
+    },
+    {
+      "id": 2,
+      "file": "ja_0002.wav",
+      "reference": "わたしは松井さんが書いた作文を読みました。.",
+      "duration_seconds": 5.376,
+      "recognized": "私は松井さんが書いた作文を読みました。",
+      "translation": "我读了松井先生写的作文。",
+      "asr_seconds": 0.3788016999988031,
+      "translation_seconds": 0.0871936999992613,
+      "total_seconds_after_audio_ready": 0.4660690999990038
+    },
+    {
+      "id": 3,
+      "file": "ja_0003.wav",
+      "reference": "木村さんに電話を貸してもらいました。.",
+      "duration_seconds": 4.176,
+      "recognized": "木村さんに電話を貸してもらいました。",
+      "translation": "借给了木村先生电话。",
+      "asr_seconds": 0.36878059999980906,
+      "translation_seconds": 0.0855412000000797,
+      "total_seconds_after_audio_ready": 0.45438280000053055
+    },
+    {
+      "id": 4,
+      "file": "ja_0004.wav",
+      "reference": "森永のおいしい牛乳は濃い青色に牛乳瓶をあしらったデザインのパック牛乳である.",
+      "duration_seconds": 6.984,
+      "recognized": "森永のおいしい牛乳は濃い青色に牛乳瓶をあしらったデザインのパック牛乳である。",
+      "translation": "森永美味的牛奶是采用深蓝色牛奶瓶设计的包装牛奶。",
+      "asr_seconds": 0.5212600000013481,
+      "translation_seconds": 0.17438409999886062,
+      "total_seconds_after_audio_ready": 0.6957333000009385
+    }
+  ],
+  "note": "These are whole-clip tests; total does not include buffering, live endpointing or phone network."
+}
