@@ -30,6 +30,8 @@ import cn.jtranslate.live.capture.CaptureService
 import cn.jtranslate.live.settings.AppSettings
 import cn.jtranslate.live.settings.Options
 import cn.jtranslate.live.network.validateServer
+import cn.jtranslate.live.network.testBackendConnection
+import cn.jtranslate.live.network.SessionFailure
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -62,6 +64,7 @@ class MainActivity : ComponentActivity() {
             var server by remember(options.server) { mutableStateOf(options.server) }
             var token by remember { mutableStateOf("") }
             var notice by remember { mutableStateOf("") }
+            var testingConnection by remember { mutableStateOf(false) }
             val colors = lightColorScheme(primary = Color(0xFF165D50), background = Color(0xFFF3F7F3), surface = Color.White)
             MaterialTheme(colorScheme = colors) {
                 Surface(Modifier.fillMaxSize()) {
@@ -85,20 +88,34 @@ class MainActivity : ComponentActivity() {
                         }
                         if (!options.localDemo) {
                             OutlinedTextField(server, { server = it }, label = { Text("后端地址") }, singleLine = true,
-                                enabled = !live.active, modifier = Modifier.fillMaxWidth())
+                                enabled = !live.active && !testingConnection, modifier = Modifier.fillMaxWidth())
                             OutlinedTextField(token, { token = it }, label = { Text("访问令牌（留空保留已保存值）") },
                                 visualTransformation = PasswordVisualTransformation(), singleLine = true,
-                                enabled = !live.active, modifier = Modifier.fillMaxWidth())
-                            OutlinedButton(enabled = !live.active, onClick = {
+                                enabled = !live.active && !testingConnection, modifier = Modifier.fillMaxWidth())
+                            OutlinedButton(enabled = !live.active && !testingConnection, onClick = {
                                 lifecycleScope.launch {
                                     runCatching {
-                                        validateServer(server)
-                                        settings.save(options.copy(server = server))
+                                        val normalized = validateServer(server.trim()).toString().trimEnd('/')
+                                        settings.save(options.copy(server = normalized))
                                         if (token.isNotBlank()) settings.saveToken(token.trim())
                                     }.onSuccess { token = ""; notice = "后端配置已保存" }
-                                        .onFailure { notice = "保存失败，请检查地址或设备安全存储" }
+                                        .onFailure { notice = (it as? SessionFailure)?.reason ?: "保存失败，请检查地址或设备安全存储" }
                                 }
                             }) { Text("保存后端配置") }
+                            OutlinedButton(enabled = !live.active && !testingConnection, onClick = {
+                                lifecycleScope.launch {
+                                    testingConnection = true
+                                    try {
+                                        val normalized = validateServer(server.trim()).toString().trimEnd('/')
+                                        settings.save(options.copy(server = normalized))
+                                        if (token.isNotBlank()) { settings.saveToken(token.trim()); token = "" }
+                                        notice = testBackendConnection(normalized, settings.token()) { notice = it }
+                                    } catch (error: Exception) {
+                                        notice = (error as? SessionFailure)?.reason ?: "连接测试失败（${error.javaClass.simpleName}）"
+                                    } finally { testingConnection = false }
+                                }
+                            }) { Text(if (testingConnection) "正在测试连接…" else "测试后端连接") }
+                            Text("地址只填写 https://域名；不要加 /health。更换地址或令牌后先保存并测试。", style = MaterialTheme.typography.bodySmall)
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                             Text("显示原文（日语）")
@@ -110,7 +127,7 @@ class MainActivity : ComponentActivity() {
                         if (live.networkRttMs > 0) Text("网络往返 ${live.networkRttMs} ms", style = MaterialTheme.typography.bodySmall)
                         if (live.error.isNotEmpty()) Text(live.error, color = MaterialTheme.colorScheme.error)
                         if (notice.isNotEmpty()) Text(notice)
-                        if (!live.active) Button(onClick = { requestStart() }, modifier = Modifier.fillMaxWidth()) { Text("授权并开始") }
+                        if (!live.active) Button(enabled = !testingConnection, onClick = { requestStart() }, modifier = Modifier.fillMaxWidth()) { Text("授权并开始") }
                         else {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(onClick = { CaptureService.command(this@MainActivity, CaptureService.TOGGLE) }) { Text(if (live.paused) "继续" else "暂停") }

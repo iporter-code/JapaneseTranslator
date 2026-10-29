@@ -1,0 +1,8 @@
+{
+  "origin": "https://brave-combine-sagem-novels.trycloudflare.com",
+  "health": 200,
+  "session": 200,
+  "stream_ready": true,
+  "heartbeat": "pong",
+  "phone_tested": false
+}

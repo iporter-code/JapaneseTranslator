@@ -10,6 +10,12 @@ import java.nio.ByteOrder
 import kotlin.math.*
 
 class CoreTest {
+    @Test fun connectionFailuresShowActionableStageWithoutExceptionSecrets() {
+        val dns = cn.jtranslate.live.network.describeConnectionFailure(java.net.UnknownHostException("private-url"), "请求失败")
+        assertTrue(dns.reason.contains("域名解析失败")); assertFalse(dns.reason.contains("private-url"))
+        assertTrue(cn.jtranslate.live.network.describeConnectionFailure(javax.net.ssl.SSLHandshakeException("secret"), "失败").reason.contains("证书"))
+        assertTrue(cn.jtranslate.live.network.describeConnectionFailure(java.net.SocketTimeoutException(), "失败").reason.contains("超时"))
+    }
     private fun event(revision: Int, text: String, final: Boolean, epoch: Int = 1, start: Long = 0,
         segment: String = "a") = JSONObject().put("type", if (final) "translation.final" else "translation.partial")
         .put("epoch", epoch).put("segment_id", segment).put("source_revision", revision)
